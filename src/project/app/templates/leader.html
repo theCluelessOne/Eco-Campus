@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Eco Campus · Leaderboard</title>
+  <style>
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:#0b1a13; color:#ecfffa}
+    .container{max-width:900px; margin:0 auto; padding:20px}
+    a{color:#a6d1bf; text-decoration:none}
+    .panel{background:#0f2a1d; border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:16px}
+    .muted{color:#a6d1bf}
+    ol{padding-left:20px}
+    .row{display:grid; gap:16px; grid-template-columns:1fr}
+    @media(min-width:900px){ .row{grid-template-columns:1fr 1fr} }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="{% url 'home' %}">← Back</a>
+    <h1>Leaderboard</h1>
+    <p class="muted">See who’s leading this month and overall.</p>
+
+    <div class="row">
+      <section class="panel">
+        <h2>Monthly</h2>
+        <ol>
+          {% for row in monthly %}
+            <li>{{ row.user__first_name|default:"User" }} — {{ row.total }} pts</li>
+          {% empty %}
+            <li class="muted">No points yet.</li>
+          {% endfor %}
+        </ol>
+      </section>
+
+      <section class="panel">
+        <h2>Overall</h2>
+        <ol>
+          {% for row in overall %}
+            <li>{{ row.user__first_name|default:"User" }} — {{ row.total }} pts</li>
+          {% empty %}
+            <li class="muted">No points yet.</li>
+          {% endfor %}
+        </ol>
+      </section>
+    </div>
+  </div>
+</body>
+</html>

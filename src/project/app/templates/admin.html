@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Eco Campus · Admin Activities</title>
+  <meta name="description" content="Create activities by point tier and manage them." />
+  <style>
+    :root{
+      --bg:#0b1a13; --panel:#0f2a1d; --panel-2:#123423; --text:#ecfffa; --muted:#a6d1bf;
+      --brand:#22c55e; --brand-700:#15803d; --border:rgba(255,255,255,.08); --radius:14px; --shadow:0 10px 30px rgba(0,0,0,.35)
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; color:var(--text);
+      background: radial-gradient(1100px 700px at 90% -10%, rgba(34,197,94,.18), transparent 55%),
+                  radial-gradient(900px 700px at -10% 0%, rgba(16,185,129,.14), transparent 45%), var(--bg);
+      line-height:1.6}
+    a{color:inherit; text-decoration:none}
+    .container{max-width:1100px; margin:0 auto; padding:0 20px}
+    header{position:sticky; top:0; z-index:50; backdrop-filter:saturate(140%) blur(8px); background:rgba(11,26,19,.7); border-bottom:1px solid var(--border)}
+    .nav{height:64px; display:flex; align-items:center; justify-content:space-between}
+    .brand{display:flex; align-items:center; gap:12px; font-weight:800}
+    .logo{width:34px; height:34px; border-radius:8px; display:grid; place-items:center; background:linear-gradient(135deg,var(--brand),#34d399); color:#042}
+    .links{display:flex; gap:16px; color:var(--muted)}
+
+    .section{padding:28px 0}
+    h1{font-size:clamp(26px,4vw,36px); margin:.5em 0 .2em}
+    h2{font-size:clamp(20px,3vw,26px); margin:0 0 10px}
+    p.muted{color:var(--muted); margin:0 0 12px}
+
+    .panel{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow)}
+    .row{display:grid; gap:16px; grid-template-columns:repeat(12,1fr)}
+    .col-8{grid-column:span 12}
+    .col-4{grid-column:span 12}
+    @media(min-width:900px){ .col-8{grid-column:span 8} .col-4{grid-column:span 4} }
+
+    .tiers{display:flex; gap:8px; flex-wrap:wrap}
+    .tier{padding:8px 12px; border:1px solid var(--border); border-radius:999px; color:var(--text); cursor:pointer; background:transparent}
+    .tier.active{background:var(--brand); color:#052e2b; font-weight:800}
+
+    form .grid{display:grid; gap:12px; grid-template-columns:repeat(12,1fr)}
+    label{display:block; font-weight:600; margin-bottom:4px}
+    input, textarea, select{width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:#0b1f15; color:var(--text)}
+    textarea{min-height:92px; resize:vertical}
+    .help{color:var(--muted); font-size:12px}
+
+    .btn{display:inline-block; padding:10px 16px; border-radius:10px; border:1px solid var(--border)}
+    .btn.primary{background:var(--brand); color:#052e2b; font-weight:800; border:0}
+    .btn.primary:hover{background:var(--brand-700); color:#eafff3}
+
+    .list{display:grid; gap:12px}
+    .card{background:var(--panel-2); border:1px solid var(--border); border-radius:var(--radius); padding:14px}
+    .meta{display:flex; gap:12px; flex-wrap:wrap; color:var(--muted); font-size:13px}
+    .pill{display:inline-block; padding:3px 10px; border-radius:999px; background:#dcfce7; color:#064e3b; font-weight:800; font-size:12px}
+    .actions{display:flex; gap:8px; align-items:center}
+    .danger{background:#dc2626; color:#fff; border:0}
+    .danger:hover{background:#b91c1c}
+    .empty{color:var(--muted); text-align:center; padding:16px; border:1px dashed var(--border); border-radius:12px}
+    .flash{margin:10px 0; padding:10px 12px; border-radius:10px; background:#052e2b; border:1px solid var(--border)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <a class="brand" href="#"><span class="logo">🛠️</span><span>Admin · Activities</span></a>
+      <div class="links">
+        <a href="{% url 'home' %}">Back to site</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container section">
+    {% if messages %}
+      {% for m in messages %}
+        <div class="flash">{{ m }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <h1>Create Activities</h1>
+    <p class="muted">Pick a points tier (2 / 5 / 8), add details, and publish. Created activities appear on the right with a delete option.</p>
+
+    <div class="row">
+      <!-- LEFT: Create form -->
+      <div class="col-8">
+        <div class="panel">
+          <h2>1) Select Points Tier</h2>
+          <div class="tiers" id="tiers">
+            <button class="tier active" type="button" data-points="2">2 pts</button>
+            <button class="tier" type="button" data-points="5">5 pts</button>
+            <button class="tier" type="button" data-points="8">8 pts</button>
+          </div>
+
+          <h2 style="margin-top:16px">2) Activity Details</h2>
+
+          <!-- Use plain HTML form posting to Django -->
+          <form id="createForm" method="post" action="{% url 'activities_admin' %}">
+            {% csrf_token %}
+            <input type="hidden" id="tier" name="tier" value="2" />
+            <div class="grid">
+              <div style="grid-column:span 8">
+                <label for="title">Title</label>
+                <input id="title" name="title" placeholder="e.g., Plastic Cleanup (Block A)" required />
+              </div>
+              <div style="grid-column:span 4">
+                <label for="slots">Number of slots</label>
+                <input id="slots" name="slots" type="number" min="1" step="1" placeholder="e.g., 20" required />
+              </div>
+              <div style="grid-column:span 12">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" placeholder="Short details students should know" required></textarea>
+                <div class="help">The selected tier will determine points awarded on completion.</div>
+              </div>
+              <div style="grid-column:span 6">
+                <label for="date">Date</label>
+                <input id="date" name="date" type="date" />
+              </div>
+              <div style="grid-column:span 6">
+                <label for="time">Time</label>
+                <input id="time" name="time" type="time" />
+              </div>
+              <div style="grid-column:span 12">
+                <label for="location">Location (optional)</label>
+                <input id="location" name="location" placeholder="e.g., Main Quad / Lab 204" />
+              </div>
+            </div>
+            <div style="margin-top:14px; display:flex; gap:10px; align-items:center">
+              <button class="btn primary" type="submit">Create Activity</button>
+              <span class="muted" id="currentTier">Current tier: <strong>2 pts</strong></span>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- RIGHT: List -->
+      <div class="col-4">
+        <div class="panel">
+          <h2>Activities (All)</h2>
+          <div class="list">
+            {% if activities %}
+              {% for it in activities %}
+                <div class="card">
+                  <div style="display:flex; justify-content:space-between; gap:10px; align-items:start">
+                    <div>
+                      <div class="pill">{{ it.points }} pts</div>
+                      <h3 style="margin:.4em 0">{{ it.title }}</h3>
+                      <p style="margin:.2em 0 .6em; color:var(--muted)">{{ it.description }}</p>
+                      <div class="meta">
+                        <span>Slots: <strong>{{ it.slots }}</strong></span>
+                        {% if it.date %}<span>Date: <strong>{{ it.date }}</strong></span>{% endif %}
+                        {% if it.time %}<span>Time: <strong>{{ it.time }}</strong></span>{% endif %}
+                        {% if it.location %}<span>Location: <strong>{{ it.location }}</strong></span>{% endif %}
+                        <span>ID: <code>{{ it.id }}</code></span>
+                      </div>
+                    </div>
+                    <div class="actions">
+                      <form method="post" action="{% url 'activities_delete' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="activity_id" value="{{ it.id }}">
+                        <button class="btn danger" type="submit">Delete</button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="empty">No activities yet. Create your first on the left.</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Keep only the tier switcher JS to update the hidden field.
+    const tiers = document.getElementById('tiers');
+    const tierHidden = document.getElementById('tier');
+    const currentTier = document.getElementById('currentTier');
+
+    tiers.addEventListener('click', (e)=>{
+      const btn = e.target.closest('.tier');
+      if(!btn) return;
+      [...tiers.querySelectorAll('.tier')].forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const selectedPoints = parseInt(btn.dataset.points,10);
+      tierHidden.value = selectedPoints;
+      currentTier.innerHTML = `Current tier: <strong>${selectedPoints} pts</strong>`;
+    });
+  </script>
+</body>
+</html>
